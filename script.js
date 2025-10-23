@@ -21,6 +21,10 @@ const BlessingManager = {
     favorites: new Set(),
     /** @type {string} 收藏localStorage键名 */
     favoritesStorageKey: '1024_blessing_favorites',
+    /** @type {boolean} 收藏功能是否启用 */
+    favoriteEnabled: true,
+    /** @type {string} 收藏设置localStorage键名 */
+    favoriteSettingsKey: '1024_favorite_settings',
     /** @type {boolean} 分享功能是否启用 */
     shareEnabled: true,
     /** @type {string} 分享设置localStorage键名 */
@@ -36,8 +40,9 @@ const BlessingManager = {
      */
     init() {
         this.loadAllBlessings();
-        this.loadProgress(); // 加载保存的进度
+        this.loadProgress(); // 加载进度
         this.loadFavorites(); // 加载收藏数据
+        this.loadFavoriteSettings(); // 加载收藏设置
         this.loadShareSettings(); // 加载分享设置
         this.loadNextPage();
         this.updateCounter();
@@ -45,6 +50,7 @@ const BlessingManager = {
         this.setupSearchResultsNavigation();
         this.initializeShareControl(); // 初始化分享控制
         this.initializeFavoriteFeature(); // 初始化收藏功能
+        this.initializeFavoriteControl(); // 初始化收藏控制
         this.checkUserGuideVisibility(); // 检查用户指引显示状态
         this.showFirstTimeGuide(); // 显示首次使用引导
         PageManager.init();
@@ -153,6 +159,41 @@ const BlessingManager = {
         } catch (error) {
             console.warn('⚠️ 保存收藏失败:', error);
             this.showTemporaryMessage('保存收藏失败', 'error');
+        }
+    },
+
+    /**
+     * 加载收藏设置
+     */
+    loadFavoriteSettings() {
+        try {
+            const saved = localStorage.getItem(this.favoriteSettingsKey);
+            if (saved) {
+                const settings = JSON.parse(saved);
+                this.favoriteEnabled = settings.enabled !== false; // 默认启用
+            } else {
+                this.favoriteEnabled = true;
+            }
+        } catch (error) {
+            console.warn('⚠️ 加载收藏设置失败:', error);
+            this.favoriteEnabled = true;
+        }
+    },
+
+    /**
+     * 保存收藏设置
+     */
+    saveFavoriteSettings() {
+        try {
+            const settings = {
+                enabled: this.favoriteEnabled,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(this.favoriteSettingsKey, JSON.stringify(settings));
+            console.log('💾 收藏设置已保存');
+        } catch (error) {
+            console.warn('⚠️ 保存收藏设置失败:', error);
+            this.showTemporaryMessage('保存收藏设置失败', 'error');
         }
     },
 
@@ -707,6 +748,9 @@ const BlessingManager = {
                 shareButtons.style.display = this.shareEnabled ? 'block' : 'none';
                 this.saveShareSettings();
                 
+                // 更新页面布局
+                this.updatePageLayout();
+                
                 const message = this.shareEnabled ? '分享功能已启用' : '分享功能已禁用';
                 this.showTemporaryMessage(message, 'info');
                 this.announceToScreenReader(message);
@@ -741,6 +785,78 @@ const BlessingManager = {
         }
         
         this.updateFavoritesCount();
+    },
+
+    /**
+     * 初始化收藏控制功能
+     */
+    initializeFavoriteControl() {
+        const favoriteToggle = document.getElementById('favoriteToggle');
+        const favoriteButtons = document.querySelectorAll('#favoriteBtn, #viewFavoritesBtn');
+        
+        if (favoriteToggle) {
+            // 设置初始状态
+            favoriteToggle.checked = this.favoriteEnabled;
+            
+            // 监听开关变化
+            favoriteToggle.addEventListener('change', (e) => {
+                this.favoriteEnabled = e.target.checked;
+                this.saveFavoriteSettings();
+                
+                // 更新收藏按钮显示状态
+                favoriteButtons.forEach(btn => {
+                    if (btn) {
+                        btn.style.display = this.favoriteEnabled ? 'block' : 'none';
+                    }
+                });
+                
+                // 更新页面布局
+                this.updatePageLayout();
+                
+                // 显示提示信息
+                const message = this.favoriteEnabled ? '收藏功能已启用' : '收藏功能已禁用';
+                this.showTemporaryMessage(message, 'info');
+                
+                console.log(`📝 收藏功能${this.favoriteEnabled ? '启用' : '禁用'}`);
+            });
+            
+            // 初始化按钮显示状态
+            favoriteButtons.forEach(btn => {
+                if (btn) {
+                    btn.style.display = this.favoriteEnabled ? 'block' : 'none';
+                }
+            });
+            
+            // 初始化页面布局
+            this.updatePageLayout();
+        }
+        
+        console.log('✅ 收藏控制功能已初始化');
+    },
+
+    /**
+     * 更新页面布局
+     */
+    updatePageLayout() {
+        const container = document.querySelector('.container');
+        const blessingDisplay = document.querySelector('.blessing-display');
+        
+        if (container && blessingDisplay) {
+            // 检查收藏和分享功能是否都关闭
+            const bothDisabled = !this.favoriteEnabled && !this.shareEnabled;
+            
+            if (bothDisabled) {
+                // 当两个功能都关闭时，使内容垂直水平居中
+                container.style.justifyContent = 'center';
+                container.style.alignItems = 'center';
+                blessingDisplay.style.textAlign = 'center';
+            } else {
+                // 恢复默认布局
+                container.style.justifyContent = '';
+                container.style.alignItems = '';
+                blessingDisplay.style.textAlign = '';
+            }
+        }
     },
 
     /**
@@ -1551,28 +1667,54 @@ const PageManager = {
     },
     
     /**
-     * 创建背景粒子效果
+     * 创建背景数字漂浮效果 - 绿色0和1数字动画
      */
     createParticles() {
         const particlesContainer = document.getElementById('particles');
         
         setInterval(() => {
-            if (document.querySelectorAll('.particle').length < 50) {
+            // 控制同时显示的数字数量在25个左右
+            if (document.querySelectorAll('.particle').length < 25) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
+                
+                // 随机选择数字0或1
+                const digit = Math.random() < 0.5 ? '0' : '1';
+                particle.textContent = digit;
+                
+                // 设置随机位置
                 particle.style.left = Math.random() * window.innerWidth + 'px';
+                
+                // 设置随机大小 (8-12px)
+                const fontSize = 8 + Math.random() * 4;
+                particle.style.fontSize = fontSize + 'px';
+                
+                // 设置随机透明度 (0.7-1.0)
+                const opacity = 0.7 + Math.random() * 0.3;
+                particle.style.opacity = opacity;
+                
+                // 设置动画延迟和持续时间
                 particle.style.animationDelay = Math.random() * 2 + 's';
                 particle.style.animationDuration = (4 + Math.random() * 4) + 's';
                 
+                // 添加随机的水平偏移量用于曲线路径
+                const horizontalOffset = (Math.random() - 0.5) * 100;
+                particle.style.setProperty('--horizontal-offset', horizontalOffset + 'px');
+                
+                // 添加随机旋转角度
+                const rotationAngle = Math.random() * 360;
+                particle.style.setProperty('--rotation-angle', rotationAngle + 'deg');
+                
                 particlesContainer.appendChild(particle);
                 
+                // 8秒后移除数字元素
                 setTimeout(() => {
                     if (particle.parentNode) {
                         particle.parentNode.removeChild(particle);
                     }
                 }, 8000);
             }
-        }, 200);
+        }, 300); // 稍微增加间隔以控制生成频率
     },
     
     /**
