@@ -17,6 +17,14 @@ const BlessingManager = {
     currentPage: 0,
     /** @type {string} localStorage键名 */
     storageKey: '1024_blessing_progress',
+    /** @type {Set<string>} 收藏的祝福语集合 */
+    favorites: new Set(),
+    /** @type {string} 收藏localStorage键名 */
+    favoritesStorageKey: '1024_blessing_favorites',
+    /** @type {boolean} 分享功能是否启用 */
+    shareEnabled: true,
+    /** @type {string} 分享设置localStorage键名 */
+    shareSettingsKey: '1024_share_settings',
     
     /**
      * 初始化祝福语管理器
@@ -29,12 +37,18 @@ const BlessingManager = {
     init() {
         this.loadAllBlessings();
         this.loadProgress(); // 加载保存的进度
+        this.loadFavorites(); // 加载收藏数据
+        this.loadShareSettings(); // 加载分享设置
         this.loadNextPage();
         this.updateCounter();
         this.setupEventListeners();
         this.setupSearchResultsNavigation();
+        this.initializeShareControl(); // 初始化分享控制
+        this.initializeFavoriteFeature(); // 初始化收藏功能
+        this.checkUserGuideVisibility(); // 检查用户指引显示状态
+        this.showFirstTimeGuide(); // 显示首次使用引导
         PageManager.init();
-        console.log('BlessingManager initialized with accessibility features');
+        console.log('BlessingManager initialized with accessibility, favorite features and user guide');
     },
     
     /**
@@ -105,6 +119,72 @@ const BlessingManager = {
         } catch (error) {
             console.warn('⚠️ 清除进度失败:', error);
             this.handleStorageError('CLEAR_FAILED', error);
+        }
+    },
+
+    /**
+     * 加载收藏数据
+     */
+    loadFavorites() {
+        try {
+            const saved = localStorage.getItem(this.favoritesStorageKey);
+            if (saved) {
+                const favoritesData = JSON.parse(saved);
+                this.favorites = new Set(favoritesData.favorites || []);
+                console.log(`❤️ 已加载 ${this.favorites.size} 条收藏`);
+            }
+        } catch (error) {
+            console.warn('⚠️ 加载收藏失败:', error);
+            this.favorites = new Set();
+        }
+    },
+
+    /**
+     * 保存收藏数据
+     */
+    saveFavorites() {
+        try {
+            const favoritesData = {
+                favorites: Array.from(this.favorites),
+                timestamp: Date.now()
+            };
+            localStorage.setItem(this.favoritesStorageKey, JSON.stringify(favoritesData));
+            console.log('💾 收藏已保存');
+        } catch (error) {
+            console.warn('⚠️ 保存收藏失败:', error);
+            this.showTemporaryMessage('保存收藏失败', 'error');
+        }
+    },
+
+    /**
+     * 加载分享设置
+     */
+    loadShareSettings() {
+        try {
+            const saved = localStorage.getItem(this.shareSettingsKey);
+            if (saved) {
+                const settings = JSON.parse(saved);
+                this.shareEnabled = settings.enabled !== false; // 默认启用
+            }
+        } catch (error) {
+            console.warn('⚠️ 加载分享设置失败:', error);
+            this.shareEnabled = true;
+        }
+    },
+
+    /**
+     * 保存分享设置
+     */
+    saveShareSettings() {
+        try {
+            const settings = {
+                enabled: this.shareEnabled,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(this.shareSettingsKey, JSON.stringify(settings));
+            console.log('💾 分享设置已保存');
+        } catch (error) {
+            console.warn('⚠️ 保存分享设置失败:', error);
         }
     },
     
@@ -450,7 +530,7 @@ const BlessingManager = {
             return '1024程序员节快乐！愿所有程序员都能收获满满的祝福！';
         }
         
-        return `${blessing.text}\n\n——来自1024程序员节祝福语库\n#1024程序员节 #程序员祝福`;
+        return `${blessing.text}\n\n——来自1024程序员节\n#1024程序员节 #程序员祝福`;
     },
 
     /**
@@ -609,6 +689,372 @@ const BlessingManager = {
             this.announceToScreenReader(isVisible ? '分享选项已隐藏' : '分享选项已显示');
         }
     },
+
+    /**
+     * 初始化分享控制功能
+     */
+    initializeShareControl() {
+        const shareToggle = document.getElementById('shareToggle');
+        const shareButtons = document.getElementById('shareButtons');
+        
+        if (shareToggle && shareButtons) {
+            // 设置初始状态
+            shareToggle.checked = this.shareEnabled;
+            shareButtons.style.display = this.shareEnabled ? 'block' : 'none';
+            
+            // 监听开关变化
+            shareToggle.addEventListener('change', (e) => {
+                this.shareEnabled = e.target.checked;
+                shareButtons.style.display = this.shareEnabled ? 'block' : 'none';
+                this.saveShareSettings();
+                
+                const message = this.shareEnabled ? '分享功能已启用' : '分享功能已禁用';
+                this.showTemporaryMessage(message, 'info');
+                this.announceToScreenReader(message);
+            });
+        }
+    },
+
+    /**
+     * 初始化收藏功能
+     */
+    initializeFavoriteFeature() {
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        const viewFavoritesBtn = document.getElementById('viewFavoritesBtn');
+        const clearFavorites = document.getElementById('clearFavorites');
+        
+        if (favoriteBtn) {
+            favoriteBtn.addEventListener('click', () => {
+                this.toggleFavorite();
+            });
+        }
+        
+        if (viewFavoritesBtn) {
+            viewFavoritesBtn.addEventListener('click', () => {
+                this.toggleFavoritesView();
+            });
+        }
+        
+        if (clearFavorites) {
+            clearFavorites.addEventListener('click', () => {
+                this.clearAllFavorites();
+            });
+        }
+        
+        this.updateFavoritesCount();
+    },
+
+    /**
+     * 切换当前祝福语的收藏状态
+     */
+    toggleFavorite() {
+        if (!this.currentBlessing) {
+            this.showTemporaryMessage('请先生成一条祝福语', 'warning');
+            return;
+        }
+        
+        const blessingKey = this.getBlessingKey(this.currentBlessing);
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        const favoriteText = favoriteBtn.querySelector('.favorite-text');
+        const favoriteIcon = favoriteBtn.querySelector('.favorite-icon');
+        
+        if (this.favorites.has(blessingKey)) {
+            // 取消收藏
+            this.favorites.delete(blessingKey);
+            favoriteBtn.classList.remove('favorited');
+            favoriteText.textContent = '收藏';
+            favoriteIcon.setAttribute('fill', 'none');
+            favoriteIcon.setAttribute('stroke', 'currentColor');
+            this.showTemporaryMessage('已取消收藏', 'info');
+            this.announceToScreenReader('已取消收藏这条祝福语');
+        } else {
+            // 添加收藏
+            this.favorites.add(blessingKey);
+            favoriteBtn.classList.add('favorited');
+            favoriteText.textContent = '已收藏';
+            favoriteIcon.setAttribute('fill', 'currentColor');
+            favoriteIcon.setAttribute('stroke', 'none');
+            this.showTemporaryMessage('已添加到收藏', 'success');
+            this.announceToScreenReader('已收藏这条祝福语');
+        }
+        
+        this.saveFavorites();
+        this.updateFavoritesCount();
+        this.updateFavoritesList();
+    },
+
+    /**
+     * 获取祝福语的唯一标识
+     */
+    getBlessingKey(blessing) {
+        return `${blessing.text}_${blessing.category}`;
+    },
+
+    /**
+     * 更新收藏按钮状态
+     */
+    updateFavoriteButton() {
+        if (!this.currentBlessing) return;
+        
+        const blessingKey = this.getBlessingKey(this.currentBlessing);
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        const favoriteText = favoriteBtn.querySelector('.favorite-text');
+        const favoriteIcon = favoriteBtn.querySelector('.favorite-icon');
+        
+        if (this.favorites.has(blessingKey)) {
+            favoriteBtn.classList.add('favorited');
+            favoriteText.textContent = '已收藏';
+            favoriteIcon.setAttribute('fill', 'currentColor');
+            favoriteIcon.setAttribute('stroke', 'none');
+        } else {
+            favoriteBtn.classList.remove('favorited');
+            favoriteText.textContent = '收藏';
+            favoriteIcon.setAttribute('fill', 'none');
+            favoriteIcon.setAttribute('stroke', 'currentColor');
+        }
+    },
+
+    /**
+     * 切换收藏列表的显示/隐藏
+     */
+    toggleFavoritesView() {
+        const favoritesSection = document.getElementById('favoritesSection');
+        const isVisible = favoritesSection.style.display !== 'none';
+        
+        if (isVisible) {
+            favoritesSection.style.display = 'none';
+            this.announceToScreenReader('收藏列表已关闭');
+        } else {
+            favoritesSection.style.display = 'block';
+            this.updateFavoritesList();
+            this.announceToScreenReader('收藏列表已打开');
+        }
+    },
+
+    /**
+     * 更新收藏数量显示
+     */
+    updateFavoritesCount() {
+        const favoritesCount = document.getElementById('favoritesCount');
+        if (favoritesCount) {
+            favoritesCount.textContent = `(${this.favorites.size})`;
+        }
+    },
+
+    /**
+     * 更新收藏列表显示
+     */
+    updateFavoritesList() {
+        const favoritesList = document.getElementById('favoritesList');
+        if (!favoritesList) return;
+        
+        if (this.favorites.size === 0) {
+            favoritesList.innerHTML = `
+                <div class="empty-favorites">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                    <p>还没有收藏任何祝福语</p>
+                    <p class="empty-tip">点击祝福语旁的❤️按钮来收藏喜欢的内容</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        Array.from(this.favorites).forEach((favoriteKey, index) => {
+            const [text, category] = favoriteKey.split('_');
+            html += `
+                <div class="favorite-item" role="listitem">
+                    <div class="favorite-content">
+                        <div class="favorite-text">${text}</div>
+                        <div class="favorite-category">${category}</div>
+                    </div>
+                    <div class="favorite-actions">
+                        <button class="favorite-action-btn" onclick="BlessingManager.copyFavoriteText('${text.replace(/'/g, "\\'")}');" aria-label="复制祝福语" title="复制">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                        </button>
+                        <button class="favorite-action-btn remove" onclick="BlessingManager.removeFavorite('${favoriteKey}');" aria-label="删除收藏" title="删除">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        favoritesList.innerHTML = html;
+    },
+
+    /**
+     * 复制收藏的祝福语文本
+     */
+    async copyFavoriteText(text) {
+        try {
+            await this.copyToClipboard(text);
+            this.showTemporaryMessage('祝福语已复制到剪贴板', 'success');
+        } catch (error) {
+            this.showTemporaryMessage('复制失败', 'error');
+        }
+    },
+
+    /**
+     * 删除单个收藏
+     */
+    removeFavorite(favoriteKey) {
+        this.favorites.delete(favoriteKey);
+        this.saveFavorites();
+        this.updateFavoritesCount();
+        this.updateFavoritesList();
+        this.updateFavoriteButton();
+        this.showTemporaryMessage('已删除收藏', 'info');
+        this.announceToScreenReader('已删除一条收藏');
+    },
+
+    /**
+     * 清空所有收藏
+     */
+    clearAllFavorites() {
+        if (this.favorites.size === 0) {
+            this.showTemporaryMessage('收藏列表已经是空的', 'info');
+            return;
+        }
+        
+        if (confirm(`确定要清空所有 ${this.favorites.size} 条收藏吗？此操作不可撤销。`)) {
+            this.favorites.clear();
+            this.saveFavorites();
+            this.updateFavoritesCount();
+            this.updateFavoritesList();
+            this.updateFavoriteButton();
+            this.showTemporaryMessage('已清空所有收藏', 'info');
+            this.announceToScreenReader('已清空所有收藏');
+        }
+    },
+
+    /**
+     * 隐藏用户指引
+     */
+    hideUserGuide() {
+        const userGuide = document.getElementById('userGuide');
+        if (userGuide) {
+            userGuide.classList.add('hidden');
+            localStorage.setItem('1024_user_guide_hidden', 'true');
+            this.announceToScreenReader('用户指引已关闭');
+        }
+    },
+
+    /**
+     * 显示用户指引
+     */
+    showUserGuide() {
+        const userGuide = document.getElementById('userGuide');
+        if (userGuide) {
+            userGuide.classList.remove('hidden');
+            this.announceToScreenReader('用户指引已显示');
+        }
+    },
+
+    /**
+     * 检查是否应该显示用户指引
+     */
+    checkUserGuideVisibility() {
+        const isHidden = localStorage.getItem('1024_user_guide_hidden') === 'true';
+        const userGuide = document.getElementById('userGuide');
+        
+        if (userGuide) {
+            if (isHidden) {
+                userGuide.classList.add('hidden');
+            } else {
+                userGuide.classList.remove('hidden');
+            }
+        }
+
+        // 检查功能介绍显示状态
+        const isIntroHidden = localStorage.getItem('1024_feature_intro_hidden') === 'true';
+        const featureIntro = document.getElementById('featureIntro');
+        
+        if (featureIntro) {
+            if (isIntroHidden) {
+                featureIntro.style.display = 'none';
+            } else {
+                featureIntro.style.display = 'block';
+            }
+        }
+    },
+
+    /**
+     * 显示操作提示
+     */
+    showOperationHint(element, message) {
+        if (!element) return;
+        
+        // 添加提示动画效果
+        element.classList.add('operation-hint');
+        
+        // 显示提示消息
+        this.showTemporaryMessage(message, 'info');
+        
+        // 移除动画效果
+        setTimeout(() => {
+            element.classList.remove('operation-hint');
+        }, 2000);
+    },
+
+    /**
+     * 显示首次使用引导
+     */
+    showFirstTimeGuide() {
+        const isFirstTime = localStorage.getItem('1024_first_time_visit') !== 'false';
+        
+        if (isFirstTime) {
+            const guideHtml = `
+                <div id="firstTimeGuide" class="first-time-guide show">
+                    <div class="first-time-guide-content">
+                        <div class="first-time-guide-title">🎉 欢迎使用新年祝福语生成器！</div>
+                        <div class="first-time-guide-text">
+                            这是一个专为1024程序员节设计的祝福语生成器，包含丰富的功能：
+                            <br><br>
+                            ✨ <strong>智能生成</strong>：随机生成各类祝福语<br>
+                            🔍 <strong>快速搜索</strong>：根据关键词查找祝福语<br>
+                            ❤️ <strong>收藏管理</strong>：收藏和管理喜欢的祝福语<br>
+                            📱 <strong>便捷分享</strong>：支持多平台分享功能<br>
+                            📊 <strong>进度追踪</strong>：查看浏览进度和完成度
+                            <br><br>
+                            现在就开始探索吧！
+                        </div>
+                        <div class="first-time-guide-actions">
+                            <button class="guide-btn primary" onclick="BlessingManager.closeFirstTimeGuide()">开始使用</button>
+                            <button class="guide-btn secondary" onclick="BlessingManager.closeFirstTimeGuide(false)">不再显示</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', guideHtml);
+        }
+    },
+
+    /**
+     * 关闭首次使用引导
+     */
+    closeFirstTimeGuide(showAgain = true) {
+        const guide = document.getElementById('firstTimeGuide');
+        if (guide) {
+            guide.classList.remove('show');
+            setTimeout(() => {
+                guide.remove();
+            }, 300);
+        }
+        
+        if (!showAgain) {
+            localStorage.setItem('1024_first_time_visit', 'false');
+        }
+        
+        this.announceToScreenReader('欢迎使用新年祝福语生成器');
+    },
     
     /**
      * 获取一个随机的未显示过的祝福语
@@ -701,9 +1147,12 @@ const BlessingManager = {
                     displayElement.classList.remove('updating');
                     
                     // 显示分享按钮
-                    if (shareButtons) {
+                    if (shareButtons && this.shareEnabled) {
                         shareButtons.style.display = 'block';
                     }
+                    
+                    // 更新收藏按钮状态
+                    this.updateFavoriteButton();
                     
                     // 添加打字机效果
                     this.typeWriterEffect(textElement, blessing.text);
@@ -1027,6 +1476,27 @@ const BlessingManager = {
                 }
             }
         });
+
+        // 用户指引关闭按钮
+        const closeGuideBtn = document.getElementById('closeGuideBtn');
+        if (closeGuideBtn) {
+            closeGuideBtn.addEventListener('click', () => {
+                this.hideUserGuide();
+            });
+        }
+
+        // 功能介绍关闭按钮
+        const closeIntroBtn = document.getElementById('closeIntroBtn');
+        if (closeIntroBtn) {
+            closeIntroBtn.addEventListener('click', () => {
+                const featureIntro = document.getElementById('featureIntro');
+                if (featureIntro) {
+                    featureIntro.style.display = 'none';
+                    localStorage.setItem('1024_feature_intro_hidden', 'true');
+                    this.announceToScreenReader('功能介绍已关闭');
+                }
+            });
+        }
     }
 };
 
