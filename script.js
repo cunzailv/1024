@@ -378,11 +378,10 @@ const BlessingManager = {
                 item.className = `search-result-item ${result.displayed ? 'displayed' : ''}`;
                 item.setAttribute('role', 'listitem');
                 item.setAttribute('tabindex', '0');
-                item.setAttribute('aria-label', `祝福语：${result.text}，分类：${result.category}${result.displayed ? '，已显示过' : ''}`);
+                item.setAttribute('aria-label', `祝福语：${result.text}，${result.displayed ? '，已显示过' : ''}`);
                 
                 item.innerHTML = `
                     <div class="search-result-text">${result.text}</div>
-                    <div class="search-result-category">分类：${result.category}</div>
                     ${result.displayed ? '<div class="search-result-status">✓ 已显示过</div>' : ''}
                 `;
                 
@@ -1139,7 +1138,6 @@ const BlessingManager = {
             setTimeout(() => {
                 try {
                     textElement.textContent = blessing.text;
-                    // categoryElement.textContent = `分类：${blessing.category}`;
                     
                     // 显示新内容
                     textElement.classList.add('show');
@@ -1158,7 +1156,7 @@ const BlessingManager = {
                     this.typeWriterEffect(textElement, blessing.text);
                     
                     // 为屏幕阅读器宣布新的祝福语
-                    this.announceToScreenReader(`新的祝福语：${blessing.text}，分类：${blessing.category}`);
+                    this.announceToScreenReader(`新的祝福语：${blessing.text}`);
                 } catch (displayError) {
                     console.error('更新显示内容时出错:', displayError);
                     this.showTemporaryMessage('显示内容更新失败', 'error');
