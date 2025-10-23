@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1024程序员节快乐♪٩(´ω`)و♪</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 粒子背景 -->
+    <div class="particles" id="particles"></div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <h1 class="title" role="banner" aria-label="1024程序员节快乐">🎉 1024程序员节快乐 🎉</h1>
+        <div class="click-counter" role="status" aria-live="polite">点击次数: <span id="clickCount" aria-label="当前点击次数">0</span></div>
+        <div class="date-display" id="dateDisplay" aria-label="当前日期时间"></div>
+        
+        <div class="heart-container" role="img" aria-label="装饰性心形图案">
+            <span id="heartPattern">❤️💻❤️</span>
+        </div>
+
+        <div class="blessing-display" id="blessingDisplay" role="button" tabindex="0" 
+             aria-label="点击获取祝福语" aria-describedby="instructionsHelp">
+            <div class="blessing-text" id="blessingText" role="text" aria-live="polite">点击这里或按空格键获取程序员祝福语</div>
+            <div class="blessing-category" id="blessingCategory" role="text" aria-live="polite"></div>
+            <div id="shareButtons" class="share-buttons" style="display: none;">
+                <button id="shareBtn" class="share-btn" aria-label="分享当前祝福语">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+                    </svg>
+                    分享
+                </button>
+                <div id="shareOptions" class="share-options" style="display: none;">
+                    <button id="shareWeChat" class="share-option" aria-label="分享到微信">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8.5 12c-.83 0-1.5-.67-1.5-1.5S7.67 9 8.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm7 0c-.83 0-1.5-.67-1.5-1.5S14.67 9 15.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20z"/>
+                        </svg>
+                        微信
+                    </button>
+                    <button id="shareWeibo" class="share-option" aria-label="分享到微博">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        微博
+                    </button>
+                    <button id="shareQQ" class="share-option" aria-label="分享到QQ">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                        </svg>
+                        QQ
+                    </button>
+                    <button id="copyLink" class="share-option" aria-label="复制链接">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                        </svg>
+                        复制
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="blessing-counter" role="status" aria-live="polite">
+            已修复BUG: <span id="blessingCount" aria-label="已修复BUG数量">0</span> / <span id="totalBlessings" aria-label="总BUG数量">1024</span>
+        </div>
+
+        <!-- 搜索功能 -->
+        <div class="search-container" role="search" aria-label="祝福语搜索">
+            <label for="searchInput" class="sr-only">搜索祝福语关键词</label>
+            <input type="text" id="searchInput" placeholder="🔍 搜索祝福语关键词..." 
+                   class="search-input" aria-label="输入搜索关键词" aria-describedby="searchHelp">
+            <button id="searchBtn" class="search-button" aria-label="执行搜索">搜索</button>
+            <button id="clearSearchBtn" class="clear-search-button" aria-label="清除搜索内容">清除</button>
+            <div id="searchHelp" class="sr-only">输入关键词搜索相关祝福语，支持按内容或分类搜索</div>
+        </div>
+        
+        <!-- 搜索结果 -->
+        <div id="searchResults" class="search-results" style="display: none;" 
+             role="region" aria-label="搜索结果" aria-live="polite">
+            <h3 id="searchResultsTitle">搜索结果</h3>
+            <div id="searchResultsList" class="search-results-list" role="list" aria-label="搜索结果列表"></div>
+            <button id="closeSearchBtn" class="close-search-button" aria-label="关闭搜索结果">关闭搜索</button>
+        </div>
+
+        <div class="instructions" role="complementary" aria-label="使用说明" id="instructionsHelp">
+            💡 使用说明：点击中心区域或按空格键<br>
+            🔍 使用搜索功能查找特定祝福语<br>
+            🎯 目标：解决全部1024条不重复的BUG，获得思考和祝福<br>
+            ⌨️ 使用Tab键在界面元素间导航<br>
+            ⌨️ 按Enter键激活按钮和链接
+        </div>
+    </div>
+
+    <!-- 完成提示弹窗 -->
+    <div class="completion-modal" id="completionModal" 
+         role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalText">
+        <div class="modal-content">
+            <div id="modalTitle" class="modal-title">🎊 恭喜完成！</div>
+            <div id="modalText" class="modal-text">
+                您已经解决1024种不同BUG，收集完1024条BUFF祝福语！<br>
+                感谢您的耐心和坚持，祝您编程世界路上一帆风顺！
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button reset-btn" onclick="BlessingManager.reset()" aria-label="重新开始游戏">重新开始</button>
+                <button class="modal-button close-btn" onclick="BlessingManager.closeCompletion()" aria-label="关闭完成提示弹窗">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入祝福语数据库 -->
+    <script src="blessings.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
