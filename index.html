@@ -12,6 +12,77 @@
 
     <!-- 主容器 -->
     <div class="container">
+        <!-- 功能控制面板 -->
+        <div class="control-panel">
+            <div class="control-item">
+                <label class="toggle-switch" for="shareToggle" aria-label="分享功能开关">
+                    <input type="checkbox" id="shareToggle" checked>
+                    <span class="slider"></span>
+                </label>
+                <span class="control-label">分享功能</span>
+            </div>
+            <div class="control-item">
+                <button id="viewFavoritesBtn" class="view-favorites-btn" aria-label="查看收藏列表">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                    我的收藏
+                </button>
+            </div>
+        </div>
+
+        <!-- 用户指引 -->
+        <div id="userGuide" class="user-guide">
+            <button id="closeGuideBtn" class="user-guide-close" onclick="BlessingManager.hideUserGuide()" aria-label="关闭指引">×</button>
+            <div class="user-guide-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+                功能使用指南
+            </div>
+            <div class="user-guide-content">
+                <ul>
+                    <li><strong>生成祝福语：</strong>点击"来一条祝福语"按钮获取随机祝福语</li>
+                    <li><strong>搜索功能：</strong>在搜索框中输入关键词查找特定祝福语</li>
+                    <li><strong>收藏功能：</strong>点击❤️按钮收藏喜欢的祝福语</li>
+                    <li><strong>分享功能：</strong>可通过开关控制显示/隐藏，支持多平台分享</li>
+                    <!-- <li><strong>进度追踪：</strong>查看已浏览的祝福语数量和完成度</li> -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- 功能介绍卡片 -->
+        <div id="featureIntro" class="feature-intro">
+            <button id="closeIntroBtn" class="feature-intro-close" aria-label="关闭功能介绍">×</button>
+            <div class="feature-intro-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                收藏功能使用说明
+            </div>
+            <div class="feature-intro-description">
+                收藏您喜欢的祝福语，随时查看和管理您的收藏列表
+            </div>
+            <ol class="feature-intro-steps">
+                <li>
+                    <span class="step-number">1</span>
+                    生成或搜索到喜欢的祝福语
+                </li>
+                <li>
+                    <span class="step-number">2</span>
+                    点击祝福语旁的❤️按钮进行收藏
+                </li>
+                <li>
+                    <span class="step-number">3</span>
+                    点击"我的收藏"按钮查看收藏列表
+                </li>
+                <li>
+                    <span class="step-number">4</span>
+                    在收藏列表中可以复制或删除收藏项
+                </li>
+            </ol>
+        </div>
+
         <h1 class="title" role="banner" aria-label="1024程序员节快乐">🎉 1024程序员节快乐 🎉</h1>
         <div class="click-counter" role="status" aria-live="polite">点击次数: <span id="clickCount" aria-label="当前点击次数">0</span></div>
         <div class="date-display" id="dateDisplay" aria-label="当前日期时间"></div>
@@ -24,45 +95,92 @@
              aria-label="点击获取祝福语" aria-describedby="instructionsHelp">
             <div class="blessing-text" id="blessingText" role="text" aria-live="polite">点击这里或按空格键获取程序员祝福语</div>
             <div class="blessing-category" id="blessingCategory" role="text" aria-live="polite"></div>
-            <div id="shareButtons" class="share-buttons" style="display: none;">
-                <button id="shareBtn" class="share-btn" aria-label="分享当前祝福语">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+            
+            <!-- 操作按钮组 -->
+            <div class="action-buttons">
+                <!-- 收藏按钮 -->
+                <button id="favoriteBtn" class="favorite-btn" aria-label="收藏祝福语" title="收藏这条祝福语">
+                    <svg class="favorite-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                     </svg>
-                    分享
+                    <span class="favorite-text">收藏</span>
                 </button>
-                <div id="shareOptions" class="share-options" style="display: none;">
-                    <button id="shareWeChat" class="share-option" aria-label="分享到微信">
+                
+                <div id="shareButtons" class="share-buttons" style="display: none;">
+                    <button id="shareBtn" class="share-btn" aria-label="分享当前祝福语">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M8.5 12c-.83 0-1.5-.67-1.5-1.5S7.67 9 8.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm7 0c-.83 0-1.5-.67-1.5-1.5S14.67 9 15.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20z"/>
+                            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
                         </svg>
-                        微信
+                        分享
                     </button>
-                    <button id="shareWeibo" class="share-option" aria-label="分享到微博">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
-                        微博
-                    </button>
-                    <button id="shareQQ" class="share-option" aria-label="分享到QQ">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-                        </svg>
-                        QQ
-                    </button>
-                    <button id="copyLink" class="share-option" aria-label="复制链接">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-                        </svg>
-                        复制
-                    </button>
+                    <div id="shareOptions" class="share-options" style="display: none;">
+                        <button id="shareWeChat" class="share-option" aria-label="分享到微信">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8.5 12c-.83 0-1.5-.67-1.5-1.5S7.67 9 8.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm7 0c-.83 0-1.5-.67-1.5-1.5S14.67 9 15.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20z"/>
+                            </svg>
+                            微信
+                        </button>
+                        <button id="shareWeibo" class="share-option" aria-label="分享到微博">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            微博
+                        </button>
+                        <button id="shareQQ" class="share-option" aria-label="分享到QQ">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                            </svg>
+                            QQ
+                        </button>
+                        <button id="copyLink" class="share-option" aria-label="复制链接">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                            复制
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="blessing-counter" role="status" aria-live="polite">
             已修复BUG: <span id="blessingCount" aria-label="已修复BUG数量">0</span> / <span id="totalBlessings" aria-label="总BUG数量">1024</span>
+        </div>
+
+        <!-- 完成度显示 -->
+        <!-- <div class="completion-container">
+            <div class="completion-text">
+                已浏览: <span id="viewedCount">0</span> / <span id="totalCount">0</span>
+            </div>
+            <div class="completion-bar">
+                <div id="completionProgress" class="completion-progress"></div>
+            </div>
+            <div class="completion-percentage">
+                完成度: <span id="completionPercentage">0%</span>
+            </div>
+        </div> -->
+
+        <!-- 收藏列表 -->
+        <div class="favorites-section" id="favoritesSection" style="display: none;">
+            <div class="favorites-header">
+                <h3>我的收藏 <span id="favoritesCount" class="favorites-count">(0)</span></h3>
+                <button id="clearFavorites" class="clear-favorites-btn" aria-label="清空收藏">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                    清空
+                </button>
+            </div>
+            <div id="favoritesList" class="favorites-list" role="list" aria-label="收藏的祝福语列表">
+                <div class="empty-favorites">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                    <p>还没有收藏任何祝福语</p>
+                    <p class="empty-tip">点击祝福语旁的❤️按钮来收藏喜欢的内容</p>
+                </div>
+            </div>
         </div>
 
         <!-- 搜索功能 -->
